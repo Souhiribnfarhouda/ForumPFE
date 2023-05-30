@@ -1,0 +1,108 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["clientExtensions", "fullTextSearch"]
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("MONGODB_URI")
+}
+
+enum Role {
+  admin
+  user
+}
+
+enum CommunityType {
+  prive
+  public
+}
+
+enum ReactionEnum {
+  like
+  love
+  sad
+  angry
+}
+
+type Reaction {
+  userId String
+  type   ReactionEnum
+}
+
+model Post {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  title       String?
+  content     String?
+  imageUrl    String?
+  reaction    Reaction[]
+  userId      String     @db.ObjectId
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  communityId String?    @db.ObjectId
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdAt   DateTime?  @default(now())
+}
+
+model DraftPost {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  title       String?
+  content     String?
+  imageUrl    String?
+  userId      String  @db.ObjectId
+  communityId String? @db.ObjectId
+}
+
+model Comment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  content   String
+  createdAt DateTime @default(now())
+  userId    String?
+  userImg   String?
+  userName  String?
+  userEmail String?
+  postId    String?
+}
+
+model User {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  email        String
+  role         Role
+  image        String?
+  password     String?
+  bio          String?
+  myCommunity  Community[]    @relation("owner")
+  communityIds String[]       @db.ObjectId
+  posts        Post[]
+  Notification Notification[]
+}
+
+enum MemberType {
+  student
+  teacher
+}
+
+type Member {
+  userId String     @db.ObjectId
+  type   MemberType
+}
+
+model Community {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  name         String?
+  ownerId      String         @db.ObjectId
+  owner        User?          @relation("owner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members      Member[]
+  type         CommunityType?
+  posts        Post[]
+  Notification Notification[]
+}
+
+model Notification {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  notifiedUserId String    @db.ObjectId
+  notifiedUser   User      @relation(fields: [notifiedUserId], references: [id], onDelete: Cascade)
+  communityId    String    @db.ObjectId
+  community      Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  createdAt      DateTime
+}
